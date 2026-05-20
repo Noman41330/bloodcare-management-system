@@ -2,32 +2,24 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 
 function DonorList() {
-  // donors = all donors from database
   const [donors, setDonors] = useState([]);
-
-  // search = search box text
   const [search, setSearch] = useState("");
-
-  // bloodFilter = selected blood group
   const [bloodFilter, setBloodFilter] = useState("");
-
-  // districtFilter = selected district
   const [districtFilter, setDistrictFilter] = useState("");
-
-  // loading = loading status
   const [loading, setLoading] = useState(true);
-
-  // message = success/error message
   const [message, setMessage] = useState("");
 
-  // Fetch donors from backend
+  // pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const donorsPerPage = 5;
+
+  // editDonor = selected donor for edit modal
+  const [editDonor, setEditDonor] = useState(null);
+
   const fetchDonors = async () => {
     try {
       setLoading(true);
-
-      // GET API = get all donor data from MongoDB
       const res = await axios.get("http://localhost:5000/api/donors");
-
       setDonors(res.data.donors);
     } catch (error) {
       setMessage("Failed to load donors");
@@ -36,12 +28,10 @@ function DonorList() {
     }
   };
 
-  // useEffect = run once when page opens
   useEffect(() => {
     fetchDonors();
   }, []);
 
-  // Delete donor
   const handleDelete = async (id) => {
     const confirmDelete = window.confirm(
       "Are you sure you want to delete this donor?"
@@ -50,64 +40,139 @@ function DonorList() {
     if (!confirmDelete) return;
 
     try {
-      // DELETE API = remove donor from MongoDB
       const res = await axios.delete(`http://localhost:5000/api/donors/${id}`);
-
       setMessage(res.data.message);
-
-      // Reload donors after delete
       fetchDonors();
     } catch (error) {
       setMessage("Failed to delete donor");
     }
   };
 
-  // Unique districts = create district dropdown from donor data
+  const handleToggleAvailability = async (id) => {
+    try {
+      const res = await axios.patch(
+        `http://localhost:5000/api/donors/${id}/availability`
+      );
+
+      setMessage(res.data.message);
+      fetchDonors();
+    } catch (error) {
+      setMessage("Failed to update availability");
+    }
+  };
+
+  const handleEditChange = (e) => {
+    setEditDonor({
+      ...editDonor,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleUpdateDonor = async (e) => {
+    e.preventDefault();
+
+    try {
+      const res = await axios.put(
+        `http://localhost:5000/api/donors/${editDonor._id}`,
+        editDonor
+      );
+
+      setMessage(res.data.message);
+      setEditDonor(null);
+      fetchDonors();
+    } catch (error) {
+      setMessage("Failed to update donor");
+    }
+  };
+
   const uniqueDistricts = [
     ...new Set(donors.map((donor) => donor.district).filter(Boolean)),
   ];
 
-  // filteredDonors = frontend search/filter result
   const filteredDonors = donors.filter((donor) => {
-    // Search by name, phone, district, address
     const matchesSearch =
       donor.name.toLowerCase().includes(search.toLowerCase()) ||
       donor.phone.toLowerCase().includes(search.toLowerCase()) ||
       donor.district.toLowerCase().includes(search.toLowerCase()) ||
       donor.address.toLowerCase().includes(search.toLowerCase());
 
-    // Blood group filter
     const matchesBlood =
       bloodFilter === "" || donor.bloodGroup === bloodFilter;
 
-    // District filter
     const matchesDistrict =
       districtFilter === "" || donor.district === districtFilter;
 
     return matchesSearch && matchesBlood && matchesDistrict;
   });
 
-  // Clear all filters
-  const clearFilters = () => {
-    setSearch("");
-    setBloodFilter("");
-    setDistrictFilter("");
+  // Pagination calculation
+    const indexOfLastDonor = currentPage * donorsPerPage;
+    const indexOfFirstDonor = indexOfLastDonor - donorsPerPage;
+    const currentDonors = filteredDonors.slice(indexOfFirstDonor, indexOfLastDonor);
+
+    const totalPages = Math.ceil(filteredDonors.length / donorsPerPage);
+
+    const clearFilters = () => {
+      setSearch("");
+      setBloodFilter("");
+      setDistrictFilter("");
+    };
+
+    // Export donor data as CSV
+  const exportCSV = () => {
+    const headers = [
+      "Name",
+      "Phone",
+      "Blood Group",
+      "District",
+      "Address",
+      "Availability",
+    ];
+
+    const rows = filteredDonors.map((donor) => [
+      donor.name,
+      donor.phone,
+      donor.bloodGroup,
+      donor.district,
+      donor.address,
+      donor.availability || "Available",
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row) => row.join(",")),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "donors.csv";
+    link.click();
   };
 
   return (
     <div className="donor-list-page">
       <div className="page-heading">
         <div>
-          <h1>Donor Search</h1>
-          <p>Search and filter registered blood donors instantly.</p>
+          <h1>Donor Control Panel</h1>
+          <p>Edit, search, filter, delete and manage donor availability.</p>
         </div>
 
         <a href="/donor-register" className="primary-action small">
           Add New Donor
         </a>
-      </div>
 
-      {/* Search Area */}
+        <button className="export-btn" onClick={exportCSV}>
+            Export CSV
+          </button>
+      </div>
+      
+
       <div className="advanced-filter-card">
         <div className="search-field wide">
           <label>Search Donor</label>
@@ -144,7 +209,6 @@ function DonorList() {
             onChange={(e) => setDistrictFilter(e.target.value)}
           >
             <option value="">All Districts</option>
-
             {uniqueDistricts.map((district) => (
               <option value={district} key={district}>
                 {district}
@@ -158,7 +222,6 @@ function DonorList() {
         </button>
       </div>
 
-      {/* Search Result Summary */}
       <div className="search-summary">
         <div>
           <strong>{filteredDonors.length}</strong>
@@ -172,7 +235,6 @@ function DonorList() {
 
       {message && <div className="message-box">{message}</div>}
 
-      {/* Donor Table */}
       <div className="table-card">
         {loading ? (
           <p className="table-message">Loading donors...</p>
@@ -187,13 +249,13 @@ function DonorList() {
                 <th>Blood</th>
                 <th>Phone</th>
                 <th>District</th>
-                <th>Address</th>
+                <th>Status</th>
                 <th>Action</th>
               </tr>
             </thead>
 
             <tbody>
-              {filteredDonors.map((donor) => (
+              {currentDonors.map((donor) => (
                 <tr key={donor._id}>
                   <td>
                     <img
@@ -205,9 +267,7 @@ function DonorList() {
 
                   <td>
                     <strong>{donor.name}</strong>
-                    <span>
-                      {new Date(donor.createdAt).toLocaleDateString()}
-                    </span>
+                    <span>{donor.address}</span>
                   </td>
 
                   <td>
@@ -218,22 +278,155 @@ function DonorList() {
 
                   <td>{donor.district}</td>
 
-                  <td>{donor.address}</td>
-
                   <td>
                     <button
-                      className="delete-btn"
-                      onClick={() => handleDelete(donor._id)}
+                      className={
+                        donor.availability === "Unavailable"
+                          ? "status-btn off"
+                          : "status-btn"
+                      }
+                      onClick={() => handleToggleAvailability(donor._id)}
                     >
-                      Delete
+                      {donor.availability || "Available"}
                     </button>
+                  </td>
+
+                  <td>
+                    <div className="action-group">
+                      <button
+                        className="edit-btn"
+                        onClick={() => setEditDonor(donor)}
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        className="delete-btn"
+                        onClick={() => handleDelete(donor._id)}
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+
+          
         )}
       </div>
+
+      <div className="pagination">
+      <button
+        disabled={currentPage === 1}
+        onClick={() => setCurrentPage(currentPage - 1)}
+      >
+        Previous
+      </button>
+
+      <span>
+        Page {currentPage} of {totalPages || 1}
+      </span>
+
+      <button
+        disabled={currentPage === totalPages || totalPages === 0}
+        onClick={() => setCurrentPage(currentPage + 1)}
+      >
+        Next
+      </button>
+    </div>
+
+      {/* Edit Modal */}
+      {editDonor && (
+        <div className="modal-overlay">
+          <div className="edit-modal">
+            <div className="modal-header">
+              <h2>Edit Donor</h2>
+              <button onClick={() => setEditDonor(null)}>×</button>
+            </div>
+
+            <form onSubmit={handleUpdateDonor}>
+              <div className="form-grid">
+                <div className="field">
+                  <label>Name</label>
+                  <input
+                    name="name"
+                    value={editDonor.name}
+                    onChange={handleEditChange}
+                    required
+                  />
+                </div>
+
+                <div className="field">
+                  <label>Phone</label>
+                  <input
+                    name="phone"
+                    value={editDonor.phone}
+                    onChange={handleEditChange}
+                    required
+                  />
+                </div>
+
+                <div className="field">
+                  <label>Blood Group</label>
+                  <select
+                    name="bloodGroup"
+                    value={editDonor.bloodGroup}
+                    onChange={handleEditChange}
+                    required
+                  >
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="O+">O+</option>
+                    <option value="O-">O-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
+                  </select>
+                </div>
+
+                <div className="field">
+                  <label>District</label>
+                  <input
+                    name="district"
+                    value={editDonor.district}
+                    onChange={handleEditChange}
+                    required
+                  />
+                </div>
+
+                <div className="field">
+                  <label>Availability</label>
+                  <select
+                    name="availability"
+                    value={editDonor.availability || "Available"}
+                    onChange={handleEditChange}
+                  >
+                    <option value="Available">Available</option>
+                    <option value="Unavailable">Unavailable</option>
+                  </select>
+                </div>
+
+                <div className="field full">
+                  <label>Address</label>
+                  <textarea
+                    name="address"
+                    value={editDonor.address}
+                    onChange={handleEditChange}
+                    required
+                  />
+                </div>
+              </div>
+
+              <button className="submit-btn" type="submit">
+                Update Donor
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

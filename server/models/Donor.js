@@ -53,6 +53,13 @@ const donorSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+
+    // availability = donor current donation status
+    availability: {
+    type: String,
+    enum: ["Available", "Unavailable"],
+    default: "Available",
+    },
   },
 
 

@@ -137,3 +137,75 @@ export const getDonorStats = async (req, res) => {
     });
   }
 };
+
+
+// =============================
+// UPDATE DONOR
+// =============================
+export const updateDonor = async (req, res) => {
+  try {
+    const donor = await Donor.findById(req.params.id);
+
+    if (!donor) {
+      return res.status(404).json({
+        success: false,
+        message: "Donor not found",
+      });
+    }
+
+    donor.name = req.body.name || donor.name;
+    donor.phone = req.body.phone || donor.phone;
+    donor.bloodGroup = req.body.bloodGroup || donor.bloodGroup;
+    donor.district = req.body.district || donor.district;
+    donor.address = req.body.address || donor.address;
+    donor.availability = req.body.availability || donor.availability;
+
+    await donor.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Donor updated successfully",
+      donor,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to update donor",
+      error: error.message,
+    });
+  }
+};
+
+
+// =============================
+// TOGGLE DONOR AVAILABILITY
+// =============================
+export const toggleDonorAvailability = async (req, res) => {
+  try {
+    const donor = await Donor.findById(req.params.id);
+
+    if (!donor) {
+      return res.status(404).json({
+        success: false,
+        message: "Donor not found",
+      });
+    }
+
+    donor.availability =
+      donor.availability === "Available" ? "Unavailable" : "Available";
+
+    await donor.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Donor availability updated",
+      donor,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to update availability",
+      error: error.message,
+    });
+  }
+};

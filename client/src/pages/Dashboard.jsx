@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/api";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -49,6 +56,17 @@ function Dashboard() {
   useEffect(() => {
     fetchStats();
   }, []);
+
+  const COLORS = [
+  "#ef4444",
+  "#3b82f6",
+  "#22c55e",
+  "#f59e0b",
+  "#8b5cf6",
+  "#ec4899",
+  "#14b8a6",
+  "#f97316",
+];
 
   return (
     <div className="dashboard-page">
@@ -110,6 +128,31 @@ function Dashboard() {
           </div>
         )}
       </section>
+
+      <div className="chart-card">
+      <h2>Blood Group Chart</h2>
+
+      <ResponsiveContainer width="100%" height={320}>
+        <PieChart>
+          <Pie
+            data={stats.bloodGroupStats}
+            dataKey="count"
+            nameKey="_id"
+            outerRadius={120}
+            label
+          >
+            {stats.bloodGroupStats?.map((entry, index) => (
+              <Cell
+                key={`cell-${index}`}
+                fill={COLORS[index % COLORS.length]}
+              />
+            ))}
+          </Pie>
+
+          <Tooltip />
+        </PieChart>
+      </ResponsiveContainer>
+    </div>
 
       {/* Recent Donors */}
       <section className="section-card">

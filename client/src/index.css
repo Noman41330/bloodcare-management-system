@@ -893,3 +893,140 @@ a {
     grid-template-columns: 1fr;
   }
 }
+
+/* Phase 7 Advanced Admin Control */
+.action-group {
+  display: flex;
+  gap: 8px;
+}
+
+.edit-btn {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.edit-btn:hover {
+  background: #2563eb;
+  color: white;
+}
+
+.status-btn {
+  background: #dcfce7;
+  color: #166534;
+  border: none;
+  padding: 9px 13px;
+  border-radius: 999px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.status-btn.off {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  display: grid;
+  place-items: center;
+  z-index: 999;
+  padding: 20px;
+}
+
+.edit-modal {
+  width: 100%;
+  max-width: 760px;
+  background: white;
+  border-radius: 26px;
+  padding: 28px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.modal-header h2 {
+  margin: 0;
+}
+
+.modal-header button {
+  width: 42px;
+  height: 42px;
+  border: none;
+  border-radius: 12px;
+  background: #fee2e2;
+  color: #991b1b;
+  font-size: 26px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+/* Pagination */
+.pagination {
+  padding: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 18px;
+}
+
+.pagination button {
+  background: #0f172a;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination span {
+  font-weight: 900;
+  color: #334155;
+}
+
+/* Export Button */
+.export-btn {
+  background: #166534;
+  color: white;
+  border: none;
+  padding: 13px 18px;
+  border-radius: 14px;
+  font-weight: 900;
+  cursor: pointer;
+  margin-right: 12px;
+}
+
+.export-btn:hover {
+  background: #15803d;
+}
+
+.chart-card {
+  background: white;
+  border-radius: 24px;
+  padding: 30px;
+  margin-top: 30px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+
+.chart-card h2 {
+  font-size: 28px;
+  margin-bottom: 20px;
+  color: #0f172a;
+}

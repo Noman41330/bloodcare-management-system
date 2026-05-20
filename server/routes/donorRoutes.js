@@ -4,11 +4,20 @@ import express from "express";
 // multer = file upload middleware
 import multer from "multer";
 
+// import {
+//   registerDonor,
+//   getAllDonors,
+//   deleteDonor,
+//   getDonorStats,
+// } from "../controllers/donorController.js";
+
 import {
   registerDonor,
   getAllDonors,
   deleteDonor,
   getDonorStats,
+  updateDonor,
+  toggleDonorAvailability,
 } from "../controllers/donorController.js";
 
 
@@ -41,6 +50,12 @@ router.get("/", getAllDonors);
 
 // GET dashboard stats
 router.get("/stats", getDonorStats);
+
+// PUT = update donor
+router.put("/:id", updateDonor);
+
+// PATCH = toggle donor availability
+router.patch("/:id/availability", toggleDonorAvailability);
 
 // DELETE API = delete donor by id
 router.delete("/:id", deleteDonor);
