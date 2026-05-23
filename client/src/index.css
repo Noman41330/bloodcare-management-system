@@ -1030,3 +1030,17 @@ a {
   margin-bottom: 20px;
   color: #0f172a;
 }
+
+.pdf-btn {
+  background: #dc2626;
+  color: white;
+  border: none;
+  padding: 15px 28px;
+  border-radius: 14px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.pdf-btn:hover {
+  background: #b91c1c;
+}

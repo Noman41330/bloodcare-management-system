@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 function DonorList() {
   const [donors, setDonors] = useState([]);
@@ -155,6 +157,36 @@ function DonorList() {
     link.click();
   };
 
+    const exportPDF = () => {
+    const doc = new jsPDF();
+
+    doc.text("Blood Donor Report", 14, 15);
+
+    const tableColumn = [
+      "Name",
+      "Blood",
+      "Phone",
+      "District",
+      "Status",
+    ];
+
+    const tableRows = filteredDonors.map((donor) => [
+      donor.name,
+      donor.bloodGroup,
+      donor.phone,
+      donor.district,
+      donor.availability,
+    ]);
+
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 25,
+    });
+
+    doc.save("blood-donors.pdf");
+  };
+
   return (
     <div className="donor-list-page">
       <div className="page-heading">
@@ -169,6 +201,10 @@ function DonorList() {
 
         <button className="export-btn" onClick={exportCSV}>
             Export CSV
+          </button>
+
+          <button className="pdf-btn" onClick={exportPDF}>
+            Export PDF
           </button>
       </div>
       
