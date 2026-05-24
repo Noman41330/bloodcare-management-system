@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import api from "../api/api";
 
 function DonorRegister() {
   const [formData, setFormData] = useState({
@@ -8,54 +8,51 @@ function DonorRegister() {
     bloodGroup: "",
     district: "",
     address: "",
+    religion: "",
+    gender: "",
+    isNewDonor: "Yes",
+    lastDonationDate: "",
+    isAgreed: false,
     photo: null,
+    nidPhoto: null,
   });
 
   const [message, setMessage] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // State update = update form value when user types
   const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+
     setFormData({
       ...formData,
-
-      // Dynamic key = name/phone/bloodGroup/district/address
-      [e.target.name]: e.target.value,
+      [name]: type === "checkbox" ? checked : value,
     });
   };
 
-  // File state = store selected image file
-  const handlePhotoChange = (e) => {
+  const handleFileChange = (e) => {
     setFormData({
       ...formData,
-      photo: e.target.files[0],
+      [e.target.name]: e.target.files[0],
     });
   };
 
-  // Submit handler = send donor data to backend API
-  const handleSubmit = async (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
 
-    try {
-      setIsSubmitting(true);
-      setMessage("");
+    if (!formData.isAgreed) {
+      setMessage("Donor must agree before registration");
+      return;
+    }
 
-      // FormData = required for image upload
+    try {
       const data = new FormData();
 
-      data.append("name", formData.name);
-      data.append("phone", formData.phone);
-      data.append("bloodGroup", formData.bloodGroup);
-      data.append("district", formData.district);
-      data.append("address", formData.address);
-      data.append("photo", formData.photo);
+      Object.keys(formData).forEach((key) => {
+        data.append(key, formData[key]);
+      });
 
-      const res = await axios.post(
-        "http://localhost:5000/api/donors/register",
-        data
-      );
+      const res = await api.post("/donors/register", data);
 
-      setMessage(res.data.message);
+      setMessage(res.data.message || "Donor registered successfully");
 
       setFormData({
         name: "",
@@ -63,135 +60,210 @@ function DonorRegister() {
         bloodGroup: "",
         district: "",
         address: "",
+        religion: "",
+        gender: "",
+        isNewDonor: "Yes",
+        lastDonationDate: "",
+        isAgreed: false,
         photo: null,
+        nidPhoto: null,
       });
     } catch (error) {
       setMessage(error.response?.data?.message || "Registration failed");
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
   return (
     <div className="register-page">
-      <section className="form-shell">
-        <div className="form-info">
-          <span className="status-badge">New Donor</span>
-
+      <div className="single-form-card">
+        <div className="form-card-header">
+          <span className="auth-badge">New Donor</span>
           <h1>Register Blood Donor</h1>
-
           <p>
-            Add verified donor information with photo, blood group, contact
-            number, and location details.
+            Fill donor details carefully. Donor ID will be generated
+            automatically from DNR10001.
           </p>
-
-          <div className="info-list">
-            <div>
-              <strong>Secure Record</strong>
-              <span>Data saved into MongoDB database</span>
-            </div>
-
-            <div>
-              <strong>Photo Upload</strong>
-              <span>Donor image stored in backend uploads folder</span>
-            </div>
-
-            <div>
-              <strong>Emergency Ready</strong>
-              <span>Useful for future donor search and filtering</span>
-            </div>
-          </div>
         </div>
 
-        <div className="form-card professional">
-          <div className="form-card-header">
-            <h2>Donor Information</h2>
-            <p>Please fill all required fields carefully.</p>
-          </div>
+        <form onSubmit={handleRegister}>
+          <div className="form-grid">
+            <div className="field">
+              <label>Donor Name</label>
+              <input
+                name="name"
+                placeholder="Example: Rahim Uddin"
+                value={formData.name}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-          <form onSubmit={handleSubmit}>
-            <div className="form-grid">
-              <div className="field">
-                <label>Donor Name</label>
-                <input
-                  type="text"
-                  name="name"
-                  placeholder="Example: Rahim Uddin"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
+            <div className="field">
+              <label>Phone Number</label>
+              <input
+                name="phone"
+                placeholder="017XXXXXXXX"
+                value={formData.phone}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-              <div className="field">
-                <label>Phone Number</label>
-                <input
-                  type="text"
-                  name="phone"
-                  placeholder="Example: 017XXXXXXXX"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
+            <div className="field">
+              <label>Blood Group</label>
+              <select
+                name="bloodGroup"
+                value={formData.bloodGroup}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Select blood group</option>
+                <option>A+</option>
+                <option>A-</option>
+                <option>B+</option>
+                <option>B-</option>
+                <option>O+</option>
+                <option>O-</option>
+                <option>AB+</option>
+                <option>AB-</option>
+              </select>
+            </div>
 
-              <div className="field">
-                <label>Blood Group</label>
-                <select
-                  name="bloodGroup"
-                  value={formData.bloodGroup}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="">Select blood group</option>
-                  <option value="A+">A+</option>
-                  <option value="A-">A-</option>
-                  <option value="B+">B+</option>
-                  <option value="B-">B-</option>
-                  <option value="O+">O+</option>
-                  <option value="O-">O-</option>
-                  <option value="AB+">AB+</option>
-                  <option value="AB-">AB-</option>
-                </select>
-              </div>
+            <div className="field">
+              <label>District</label>
+              <input
+                name="district"
+                placeholder="Example: Dhaka"
+                value={formData.district}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-              <div className="field">
-                <label>District</label>
-                <input
-                  type="text"
-                  name="district"
-                  placeholder="Example: Dhaka"
-                  value={formData.district}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
+            <div className="field full">
+              <label>Full Address</label>
+              <textarea
+                name="address"
+                placeholder="Example: Mirpur 10, Dhaka"
+                value={formData.address}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-              <div className="field full">
-                <label>Full Address</label>
-                <textarea
-                  name="address"
-                  placeholder="Example: Mirpur 10, Dhaka"
-                  value={formData.address}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div className="field full">
-                <label>Donor Photo</label>
-                <input type="file" accept="image/*" onChange={handlePhotoChange} required />
+            <div className="field full">
+              <label>Religion</label>
+              <div className="radio-group">
+                {["Islam", "Hindu", "Christian", "Buddhist", "Others"].map(
+                  (item) => (
+                    <label key={item}>
+                      <input
+                        type="radio"
+                        name="religion"
+                        value={item}
+                        checked={formData.religion === item}
+                        onChange={handleChange}
+                        required
+                      />
+                      {item}
+                    </label>
+                  )
+                )}
               </div>
             </div>
 
-            <button className="submit-btn" type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Registering..." : "Register Donor"}
-            </button>
-          </form>
+            <div className="field full">
+              <label>Gender</label>
+              <div className="radio-group">
+                {["Male", "Female", "Other"].map((item) => (
+                  <label key={item}>
+                    <input
+                      type="radio"
+                      name="gender"
+                      value={item}
+                      checked={formData.gender === item}
+                      onChange={handleChange}
+                      required
+                    />
+                    {item}
+                  </label>
+                ))}
+              </div>
+            </div>
 
-          {message && <div className="message-box">{message}</div>}
-        </div>
-      </section>
+            <div className="field full">
+              <label>New Donor?</label>
+              <div className="radio-group">
+                {["Yes", "No"].map((item) => (
+                  <label key={item}>
+                    <input
+                      type="radio"
+                      name="isNewDonor"
+                      value={item}
+                      checked={formData.isNewDonor === item}
+                      onChange={handleChange}
+                    />
+                    {item}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {formData.isNewDonor === "No" && (
+              <div className="field">
+                <label>Last Donation Date</label>
+                <input
+                  type="date"
+                  name="lastDonationDate"
+                  value={formData.lastDonationDate}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+            )}
+
+            <div className="field">
+              <label>Donor Photo</label>
+              <input
+                type="file"
+                name="photo"
+                accept="image/*"
+                onChange={handleFileChange}
+                required
+              />
+            </div>
+
+            <div className="field">
+              <label>NID Photo</label>
+              <input
+                type="file"
+                name="nidPhoto"
+                accept="image/*"
+                onChange={handleFileChange}
+                required
+              />
+            </div>
+
+            <div className="field full">
+              <label className="agree-box">
+                <input
+                  type="checkbox"
+                  name="isAgreed"
+                  checked={formData.isAgreed}
+                  onChange={handleChange}
+                />
+                I willingly agree to donate blood. No one forced me.
+              </label>
+            </div>
+          </div>
+
+          <button className="submit-btn" type="submit">
+            Register Donor
+          </button>
+        </form>
+
+        {message && <div className="message-box">{message}</div>}
+      </div>
     </div>
   );
 }

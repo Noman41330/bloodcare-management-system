@@ -65,7 +65,9 @@ function Login() {
             required
           />
 
-          <button type="submit">Login</button>
+          <button className="submit-btn" type="submit">
+          Login
+        </button>
         </form>
 
         {message && <div className="error-box">{message}</div>}

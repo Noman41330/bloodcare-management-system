@@ -17,6 +17,7 @@ import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import EmergencyRequest from "./pages/EmergencyRequest";
 import BecomeDonor from "./pages/BecomeDonor";
+import DonorProfile from "./pages/DonorProfile";
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -141,6 +142,8 @@ function App() {
           }
         />
 
+
+        <Route path="/donors/:id" element={<DonorProfile />} />
         
           </Routes>
           

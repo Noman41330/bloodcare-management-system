@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import api from "../api/api";
+
 import {
   PieChart,
   Pie,
@@ -9,13 +10,12 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+const bloodGroups = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"];
+
 function Dashboard() {
   const navigate = useNavigate();
-
-  // adminInfo = logged-in admin data
   const adminInfo = JSON.parse(localStorage.getItem("adminInfo"));
 
-  // stats = dashboard data from backend
   const [stats, setStats] = useState({
     totalDonors: 0,
     recentDonors: [],
@@ -24,26 +24,23 @@ function Dashboard() {
 
   const [loading, setLoading] = useState(true);
 
-  // logout = remove login session
   const handleLogout = () => {
     localStorage.removeItem("adminToken");
     localStorage.removeItem("adminInfo");
-
+    localStorage.removeItem("userInfo");
     navigate("/login");
   };
 
-  // fetchStats = get dashboard data from backend
   const fetchStats = async () => {
     try {
       setLoading(true);
 
-      // GET /api/donors/stats
       const res = await api.get("/donors/stats");
 
       setStats({
-        totalDonors: res.data.totalDonors,
-        recentDonors: res.data.recentDonors,
-        bloodGroupStats: res.data.bloodGroupStats,
+        totalDonors: res.data.totalDonors || 0,
+        recentDonors: res.data.recentDonors || [],
+        bloodGroupStats: res.data.bloodGroupStats || [],
       });
     } catch (error) {
       console.log("Dashboard stats error:", error);
@@ -52,21 +49,25 @@ function Dashboard() {
     }
   };
 
-  // useEffect = run when dashboard page opens
   useEffect(() => {
     fetchStats();
   }, []);
 
+  const getBloodCount = (group) => {
+    const found = stats.bloodGroupStats.find((item) => item._id === group);
+    return found ? found.count : 0;
+  };
+
   const COLORS = [
-  "#ef4444",
-  "#3b82f6",
-  "#22c55e",
-  "#f59e0b",
-  "#8b5cf6",
-  "#ec4899",
-  "#14b8a6",
-  "#f97316",
-];
+    "#ef4444",
+    "#3b82f6",
+    "#22c55e",
+    "#f59e0b",
+    "#8b5cf6",
+    "#ec4899",
+    "#14b8a6",
+    "#f97316",
+  ];
 
   return (
     <div className="dashboard-page">
@@ -81,19 +82,18 @@ function Dashboard() {
         </button>
       </div>
 
-      {/* Analytics Cards */}
       <section className="stats-grid">
-        <div className="stat-card">
+        <Link to="/donors" className="stat-card clickable-card">
           <span>Total Donors</span>
           <h2>{loading ? "..." : stats.totalDonors}</h2>
-          <p>Registered blood donors</p>
-        </div>
+          <p>Click to view all donors</p>
+        </Link>
 
-        <div className="stat-card">
+        <a href="#blood-group-list" className="stat-card clickable-card">
           <span>Blood Groups</span>
-          <h2>{stats.bloodGroupStats.length}</h2>
-          <p>Available group categories</p>
-        </div>
+          <h2>{bloodGroups.length}</h2>
+          <p>Click to view blood group list</p>
+        </a>
 
         <div className="stat-card">
           <span>Admin</span>
@@ -108,53 +108,56 @@ function Dashboard() {
         </div>
       </section>
 
-      {/* Blood Group Analytics */}
-      <section className="section-card">
+      <section className="section-card" id="blood-group-list">
         <div className="section-title">
           <h2>Blood Group Analytics</h2>
-          <p>Donor count grouped by blood type.</p>
+          <p>Click any blood group to view matching donors.</p>
+        </div>
+
+        <div className="blood-overview-grid">
+          {bloodGroups.map((group) => (
+            <Link
+              to={`/donors?bloodGroup=${encodeURIComponent(group)}`}
+              className="blood-overview-card"
+              key={group}
+            >
+              <div className="blood-group-circle">{group}</div>
+              <h3>{getBloodCount(group)}</h3>
+              <p>Donors</p>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="chart-card">
+        <div className="section-title">
+          <h2>Blood Group Chart</h2>
+          <p>Visual donor distribution overview.</p>
         </div>
 
         {stats.bloodGroupStats.length === 0 ? (
-          <p className="table-message">No blood group data found</p>
+          <p className="table-message">No chart data found</p>
         ) : (
-          <div className="blood-grid analytics">
-            {stats.bloodGroupStats.map((item) => (
-              <div className="blood-card" key={item._id}>
-                <strong>{item._id}</strong>
-                <span>{item.count} Donors</span>
-              </div>
-            ))}
-          </div>
+          <ResponsiveContainer width="100%" height={350}>
+            <PieChart>
+              <Pie
+                data={stats.bloodGroupStats}
+                dataKey="count"
+                nameKey="_id"
+                outerRadius={120}
+                label
+              >
+                {stats.bloodGroupStats.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
         )}
       </section>
 
-      <div className="chart-card">
-      <h2>Blood Group Chart</h2>
-
-      <ResponsiveContainer width="100%" height={320}>
-        <PieChart>
-          <Pie
-            data={stats.bloodGroupStats}
-            dataKey="count"
-            nameKey="_id"
-            outerRadius={120}
-            label
-          >
-            {stats.bloodGroupStats?.map((entry, index) => (
-              <Cell
-                key={`cell-${index}`}
-                fill={COLORS[index % COLORS.length]}
-              />
-            ))}
-          </Pie>
-
-          <Tooltip />
-        </PieChart>
-      </ResponsiveContainer>
-    </div>
-
-      {/* Recent Donors */}
       <section className="section-card">
         <div className="section-title">
           <h2>Recent Donors</h2>
@@ -166,7 +169,11 @@ function Dashboard() {
         ) : (
           <div className="recent-donor-list">
             {stats.recentDonors.map((donor) => (
-              <div className="recent-donor-card" key={donor._id}>
+              <Link
+                to={`/donors?bloodGroup=${encodeURIComponent(donor.bloodGroup)}`}
+                className="recent-donor-card"
+                key={donor._id}
+              >
                 <img
                   src={`http://localhost:5000${donor.photo}`}
                   alt={donor.name}
@@ -180,7 +187,7 @@ function Dashboard() {
                 <span className="blood-pill">{donor.bloodGroup}</span>
 
                 <small>{donor.district}</small>
-              </div>
+              </Link>
             ))}
           </div>
         )}

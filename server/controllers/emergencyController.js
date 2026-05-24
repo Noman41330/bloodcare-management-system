@@ -108,3 +108,22 @@ export const updateEmergencyStatus = async (req, res) => {
     });
   }
 };
+
+export const getEmergencyStats = async (req, res) => {
+  try {
+    const pendingRequests = await EmergencyRequest.countDocuments({
+      status: "Pending",
+    });
+
+    res.status(200).json({
+      success: true,
+      pendingRequests,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to load emergency stats",
+      error: error.message,
+    });
+  }
+};

@@ -1,95 +1,107 @@
-// mongoose = MongoDB helper package
 import mongoose from "mongoose";
 
-
-// Schema = database structure blueprint
 const donorSchema = new mongoose.Schema(
-
   {
+    // Auto generated donor ID: DNR10001, DNR10002...
+    donorId: {
+      type: String,
+      unique: true,
+      trim: true,
+    },
 
-    // userId = link donor profile with user account
+    // If donor is connected with a user account
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
 
-    // type:String = text data
-    // required:true = field must be filled
-    // trim:true = remove extra spaces
+    // Basic donor information
     name: {
       type: String,
       required: true,
       trim: true,
     },
 
-
-    // Store donor phone number
     phone: {
       type: String,
       required: true,
       trim: true,
     },
 
-
-    // Store blood group
     bloodGroup: {
       type: String,
       required: true,
+      enum: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"],
     },
 
-
-    // Store district name
     district: {
       type: String,
       required: true,
       trim: true,
     },
 
-
-    // Store full address
     address: {
       type: String,
       required: true,
       trim: true,
     },
 
+    // Extra donor details
+    religion: {
+      type: String,
+      required: true,
+      enum: ["Islam", "Hindu", "Christian", "Buddhist", "Others"],
+    },
 
-    // Store uploaded image path
+    gender: {
+      type: String,
+      required: true,
+      enum: ["Male", "Female", "Other"],
+    },
+
+    // Donation status
+    isNewDonor: {
+      type: String,
+      required: true,
+      enum: ["Yes", "No"],
+      default: "Yes",
+    },
+
+    // Required only if isNewDonor = No
+    lastDonationDate: {
+      type: Date,
+      default: null,
+    },
+
+    // Donor profile photo
     photo: {
       type: String,
       required: true,
     },
 
-    // availability = donor current donation status
+    // NID photo attachment
+    nidPhoto: {
+      type: String,
+      required: true,
+    },
+
+    // Consent checkbox
+    isAgreed: {
+      type: Boolean,
+      required: true,
+      default: false,
+    },
+
+    // Current availability
     availability: {
-    type: String,
-    enum: ["Available", "Unavailable"],
-    default: "Available",
+      type: String,
+      enum: ["Available", "Unavailable"],
+      default: "Available",
     },
   },
-
-
-  // timestamps:true
-  // automatically adds:
-  // createdAt
-  // updatedAt
-  {
-    timestamps: true,
-  }
-
-  
+  { timestamps: true }
 );
 
+const Donor = mongoose.model("Donor", donorSchema);
 
-// model = MongoDB collection creator
-// "Donor" becomes "donors" collection
-const Donor = mongoose.model(
-  "Donor",
-  donorSchema
-);
-
-
-
-
-// export = allow use in other files
 export default Donor;

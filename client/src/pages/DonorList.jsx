@@ -1,12 +1,17 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import axios from "axios";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { useNavigate } from "react-router-dom";
 
 function DonorList() {
+  const [searchParams] = useSearchParams();
   const [donors, setDonors] = useState([]);
   const [search, setSearch] = useState("");
-  const [bloodFilter, setBloodFilter] = useState("");
+  const [bloodFilter, setBloodFilter] = useState(
+          searchParams.get("bloodGroup") || ""
+        );
   const [districtFilter, setDistrictFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
@@ -187,6 +192,8 @@ function DonorList() {
     doc.save("blood-donors.pdf");
   };
 
+  const navigate = useNavigate();
+
   return (
     <div className="donor-list-page">
       <div className="page-heading">
@@ -292,7 +299,11 @@ function DonorList() {
 
             <tbody>
               {currentDonors.map((donor) => (
-                <tr key={donor._id}>
+                <tr
+                  key={donor._id}
+                  className="clickable-row"
+                  onClick={() => navigate(`/donors/${donor._id}`)}
+                >
                   <td>
                     <img
                       className="donor-photo"
@@ -330,18 +341,24 @@ function DonorList() {
                   <td>
                     <div className="action-group">
                       <button
-                        className="edit-btn"
-                        onClick={() => setEditDonor(donor)}
-                      >
-                        Edit
-                      </button>
+                          className="edit-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(donor);
+                          }}
+                        >
+                          Edit
+                        </button>
 
-                      <button
-                        className="delete-btn"
-                        onClick={() => handleDelete(donor._id)}
-                      >
-                        Delete
-                      </button>
+                        <button
+                          className="delete-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(donor._id);
+                          }}
+                        >
+                          Delete
+                        </button>
                     </div>
                   </td>
                 </tr>

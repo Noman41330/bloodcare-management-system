@@ -4,13 +4,6 @@ import express from "express";
 // multer = file upload middleware
 import multer from "multer";
 
-// import {
-//   registerDonor,
-//   getAllDonors,
-//   deleteDonor,
-//   getDonorStats,
-// } from "../controllers/donorController.js";
-
 import {
   registerDonor,
   getAllDonors,
@@ -18,13 +11,12 @@ import {
   getDonorStats,
   updateDonor,
   toggleDonorAvailability,
+  getSingleDonor,
 } from "../controllers/donorController.js";
-
 
 const router = express.Router();
 
-
-// diskStorage = save uploaded photo inside local folder
+// diskStorage = save uploaded files inside local uploads folder
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, "uploads/");
@@ -36,20 +28,34 @@ const storage = multer.diskStorage({
   },
 });
 
-
-// upload = middleware for image upload
+// upload = middleware for image/file upload
 const upload = multer({ storage });
 
+// =============================
+// ROUTES
+// =============================
 
-// POST API = create donor
-router.post("/register", upload.single("photo"), registerDonor);
+// POST = create donor
+// photo = donor profile photo
+// nidPhoto = donor NID photo
+router.post(
+  "/register",
+  upload.fields([
+    { name: "photo", maxCount: 1 },
+    { name: "nidPhoto", maxCount: 1 },
+  ]),
+  registerDonor
+);
 
+// GET = get dashboard stats
+// IMPORTANT: keep this before "/:id"
+router.get("/stats", getDonorStats);
 
-// GET API = get all donors
+// GET = get all donors
 router.get("/", getAllDonors);
 
-// GET dashboard stats
-router.get("/stats", getDonorStats);
+// GET = get single donor profile
+router.get("/:id", getSingleDonor);
 
 // PUT = update donor
 router.put("/:id", updateDonor);
@@ -57,8 +63,7 @@ router.put("/:id", updateDonor);
 // PATCH = toggle donor availability
 router.patch("/:id/availability", toggleDonorAvailability);
 
-// DELETE API = delete donor by id
+// DELETE = delete donor by id
 router.delete("/:id", deleteDonor);
-
 
 export default router;
