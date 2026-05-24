@@ -2,115 +2,173 @@ import { useState } from "react";
 import api from "../api/api";
 
 function Register() {
+  const [role, setRole] = useState("member");
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
+    phone: "",
+    district: "",
+    bloodGroup: "",
+    address: "",
+    age: "",
+    weight: "",
+    lastDonationMonths: "",
+    hasMajorIllness: "no",
+    photo: null,
   });
 
   const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  // handleChange = input value update
   const handleChange = (e) => {
     setFormData({
       ...formData,
-
-      // e.target.name = name/email/password
-      // e.target.value = typed value
       [e.target.name]: e.target.value,
     });
   };
 
-  // handleRegister = submit form to backend
+  const handlePhotoChange = (e) => {
+    setFormData({
+      ...formData,
+      photo: e.target.files[0],
+    });
+  };
+
   const handleRegister = async (e) => {
     e.preventDefault();
 
     try {
-      setLoading(true);
-      setMessage("");
-      setMessageType("");
+      const data = new FormData();
 
-      // API request = POST http://localhost:5000/api/auth/register
-      const res = await api.post("/auth/register", formData);
+      data.append("role", role);
 
-      setMessage(res.data.message || "Admin registered successfully");
-      setMessageType("success");
-
-      // Clear form after success
-      setFormData({
-        name: "",
-        email: "",
-        password: "",
+      Object.keys(formData).forEach((key) => {
+        if (formData[key]) {
+          data.append(key, formData[key]);
+        }
       });
+
+      const res = await api.post("/auth/register", data);
+
+      setMessage(res.data.message);
     } catch (error) {
-      // Console helps us see exact backend/frontend error
-      console.log("FULL ERROR:", error);
-      console.log("BACKEND RESPONSE:", error.response?.data);
-
-      setMessage(
-        error.response?.data?.message ||
-          error.message ||
-          "Registration failed"
-      );
-
-      setMessageType("error");
-    } finally {
-      setLoading(false);
+      setMessage(error.response?.data?.message || "Registration failed");
     }
   };
 
   return (
     <div className="auth-page">
-      <div className="auth-card">
-        <span className="auth-badge">Create Admin</span>
+      <div className="auth-card wide-auth">
+        <span className="auth-badge">Create Account</span>
 
-        <h1>Register Admin</h1>
-        <p>Create an admin account for this system.</p>
+        <h1>Register Account</h1>
+        <p>Register as a member or directly as an eligible donor.</p>
+
+        <div className="role-switch">
+          <button
+            type="button"
+            className={role === "member" ? "active" : ""}
+            onClick={() => setRole("member")}
+          >
+            Member
+          </button>
+
+          <button
+            type="button"
+            className={role === "donor" ? "active" : ""}
+            onClick={() => setRole("donor")}
+          >
+            Donor
+          </button>
+        </div>
 
         <form onSubmit={handleRegister}>
-          <label>Name</label>
-          <input
-            type="text"
-            name="name"
-            placeholder="Admin name"
-            value={formData.name}
-            onChange={handleChange}
-            required
-          />
+          <div className="form-grid">
+            <div className="field">
+              <label>Name</label>
+              <input name="name" value={formData.name} onChange={handleChange} required />
+            </div>
 
-          <label>Email</label>
-          <input
-            type="email"
-            name="email"
-            placeholder="admin@example.com"
-            value={formData.email}
-            onChange={handleChange}
-            required
-          />
+            <div className="field">
+              <label>Email</label>
+              <input type="email" name="email" value={formData.email} onChange={handleChange} required />
+            </div>
 
-          <label>Password</label>
-          <input
-            type="password"
-            name="password"
-            placeholder="Minimum 6 characters"
-            value={formData.password}
-            onChange={handleChange}
-            required
-            minLength={6}
-          />
+            <div className="field">
+              <label>Password</label>
+              <input type="password" name="password" value={formData.password} onChange={handleChange} required />
+            </div>
 
-          <button type="submit" disabled={loading}>
-            {loading ? "Creating..." : "Create Admin"}
+            <div className="field">
+              <label>Phone</label>
+              <input name="phone" value={formData.phone} onChange={handleChange} required />
+            </div>
+
+            <div className="field">
+              <label>District</label>
+              <input name="district" value={formData.district} onChange={handleChange} required />
+            </div>
+
+            {role === "donor" && (
+              <>
+                <div className="field">
+                  <label>Blood Group</label>
+                  <select name="bloodGroup" value={formData.bloodGroup} onChange={handleChange} required>
+                    <option value="">Select</option>
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="O+">O+</option>
+                    <option value="O-">O-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
+                  </select>
+                </div>
+
+                <div className="field">
+                  <label>Age</label>
+                  <input name="age" type="number" value={formData.age} onChange={handleChange} required />
+                </div>
+
+                <div className="field">
+                  <label>Weight KG</label>
+                  <input name="weight" type="number" value={formData.weight} onChange={handleChange} required />
+                </div>
+
+                <div className="field">
+                  <label>Last Donation Months Ago</label>
+                  <input name="lastDonationMonths" type="number" value={formData.lastDonationMonths} onChange={handleChange} required />
+                </div>
+
+                <div className="field">
+                  <label>Major Illness?</label>
+                  <select name="hasMajorIllness" value={formData.hasMajorIllness} onChange={handleChange}>
+                    <option value="no">No</option>
+                    <option value="yes">Yes</option>
+                  </select>
+                </div>
+
+                <div className="field full">
+                  <label>Address</label>
+                  <textarea name="address" value={formData.address} onChange={handleChange} required />
+                </div>
+
+                <div className="field full">
+                  <label>Photo</label>
+                  <input type="file" accept="image/*" onChange={handlePhotoChange} required />
+                </div>
+              </>
+            )}
+          </div>
+
+          <button type="submit">
+            {role === "donor" ? "Register as Donor" : "Register as Member"}
           </button>
         </form>
 
-        {message && (
-          <div className={messageType === "success" ? "message-box" : "error-box"}>
-            {message}
-          </div>
-        )}
+        {message && <div className="message-box">{message}</div>}
       </div>
     </div>
   );

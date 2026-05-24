@@ -27,7 +27,8 @@ function Login() {
 
       // localStorage = browser storage
       localStorage.setItem("adminToken", res.data.token);
-      localStorage.setItem("adminInfo", JSON.stringify(res.data.admin));
+      localStorage.setItem("userInfo", JSON.stringify(res.data.user));
+      localStorage.setItem("adminInfo", JSON.stringify(res.data.user));
 
       navigate("/dashboard");
     } catch (error) {

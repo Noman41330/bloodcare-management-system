@@ -1,22 +1,20 @@
 import jwt from "jsonwebtoken";
-import Admin from "../models/Admin.js";
+import User from "../models/User.js";
 
-// protect = middleware for private/protected APIs
+// protect = checks logged-in user token
 export const protect = async (req, res, next) => {
   try {
     let token;
 
     // Authorization header example:
-    // Bearer eyJhbGciOiJIUzI1...
+    // Bearer token_here
     if (
       req.headers.authorization &&
       req.headers.authorization.startsWith("Bearer")
     ) {
-      // split(" ")[1] = take only token after Bearer
       token = req.headers.authorization.split(" ")[1];
     }
 
-    // If token missing, block request
     if (!token) {
       return res.status(401).json({
         success: false,
@@ -24,11 +22,11 @@ export const protect = async (req, res, next) => {
       });
     }
 
-    // verify = check token is valid or not
+    // decoded = token data
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // attach logged-in admin data to req
-    req.admin = await Admin.findById(decoded.id).select("-password");
+    // req.user = logged-in user data
+    req.user = await User.findById(decoded.id).select("-password");
 
     next();
   } catch (error) {
@@ -37,4 +35,18 @@ export const protect = async (req, res, next) => {
       message: "Not authorized, token failed",
     });
   }
+};
+
+// allowRoles = role permission checker
+export const allowRoles = (...roles) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: "You do not have permission",
+      });
+    }
+
+    next();
+  };
 };

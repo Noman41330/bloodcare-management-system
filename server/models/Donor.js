@@ -7,6 +7,12 @@ const donorSchema = new mongoose.Schema(
 
   {
 
+    // userId = link donor profile with user account
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+
     // type:String = text data
     // required:true = field must be filled
     // trim:true = remove extra spaces
@@ -70,6 +76,8 @@ const donorSchema = new mongoose.Schema(
   {
     timestamps: true,
   }
+
+  
 );
 
 
@@ -79,6 +87,8 @@ const Donor = mongoose.model(
   "Donor",
   donorSchema
 );
+
+
 
 
 // export = allow use in other files

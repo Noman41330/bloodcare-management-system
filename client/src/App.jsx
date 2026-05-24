@@ -1,4 +1,12 @@
-import { BrowserRouter, Routes, Route, NavLink } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  NavLink,
+  Link,
+} from "react-router-dom";
+
+import { useState } from "react";
 
 import Home from "./pages/Home";
 import DonorRegister from "./pages/DonorRegister";
@@ -8,24 +16,52 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import EmergencyRequest from "./pages/EmergencyRequest";
+import BecomeDonor from "./pages/BecomeDonor";
 
 function App() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   return (
     <BrowserRouter>
-      {/* App Shell = main layout wrapper */}
-      <div className="app-shell">
-        {/* Sidebar = professional dashboard navigation */}
-        <aside className="sidebar">
-          <div className="brand">
-            <div className="brand-icon">🩸</div>
-            <div>
-              <h2>BloodCare</h2>
-              <p>Donor Management</p>
-            </div>
+      <div className="site-shell">
+        {/* TOP NAVBAR */}
+        <header className="site-navbar">
+          {/* LEFT */}
+          <div className="nav-left">
+            <button
+              className="hamburger-btn"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+            >
+              ☰
+            </button>
           </div>
 
-          <nav className="side-nav">
+          {/* CENTER */}
+          <Link to="/" className="site-logo center-logo">
+            <span className="site-logo-icon">🩸</span>
+            <span>BloodCare</span>
+          </Link>
+
+          {/* RIGHT */}
+          <div className="top-actions">
+            <NavLink to="/login" className="login-link">
+              Login
+            </NavLink>
+
+            <NavLink to="/emergency" className="demo-btn">
+              Emergency Request
+            </NavLink>
+          </div>
+        </header>
+
+        {/* SIDEBAR */}
+        <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
+          <div className="sidebar-menu">
             <NavLink to="/" end>
+              Home
+            </NavLink>
+
+            <NavLink to="/dashboard">
               Dashboard
             </NavLink>
 
@@ -37,46 +73,77 @@ function App() {
               Donor List
             </NavLink>
 
-            <NavLink to="/dashboard">Admin Dashboard</NavLink>
-
-            <NavLink to="/login">Login</NavLink>
-
-            <NavLink to="/register">Create Admin</NavLink>
-
             <NavLink to="/emergency">
-               Emergency Request
+              Emergency
             </NavLink>
-          </nav>
+            <NavLink to="/become-donor">Become Donor</NavLink>
+          </div>
         </aside>
 
-        {/* Main area = page content */}
-        <main className="main-content">
-          <header className="topbar">
-            <div>
-              <h3>Blood Donor Management System</h3>
-              <p>Manage donor registration and donor records</p>
-            </div>
+        {/* OVERLAY */}
+        {sidebarOpen && (
+          <div
+            className="sidebar-overlay"
+            onClick={() => setSidebarOpen(false)}
+          ></div>
+        )}
 
-            <button className="topbar-btn">Emergency Request</button>
-          </header>
-
+        {/* MAIN */}
+        <main className="site-main">
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/donor-register" element={<DonorRegister />} />
-            <Route path="/donors" element={<DonorList />} />
+
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/emergency" element={<EmergencyRequest />} />
 
             <Route
-              path="/dashboard" 
+              path="/dashboard"
               element={
                 <ProtectedRoute>
                   <Dashboard />
                 </ProtectedRoute>
               }
-              />
+            />
+
+            <Route
+              path="/donor-register"
+              element={
+                <ProtectedRoute>
+                  <DonorRegister />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/donors"
+              element={
+                <ProtectedRoute>
+                  <DonorList />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/emergency"
+              element={
+                <ProtectedRoute>
+                  <EmergencyRequest />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+          path="/become-donor"
+          element={
+            <ProtectedRoute>
+              <BecomeDonor />
+            </ProtectedRoute>
+          }
+        />
+
+        
           </Routes>
+          
         </main>
       </div>
     </BrowserRouter>
