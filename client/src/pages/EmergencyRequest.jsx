@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import api from "../api/api";
 
 function EmergencyRequest() {
@@ -14,9 +14,29 @@ function EmergencyRequest() {
   });
 
   const [matchingDonors, setMatchingDonors] = useState([]);
+  const [requests, setRequests] = useState([]);
   const [message, setMessage] = useState("");
 
+  const [search, setSearch] = useState("");
+  const [groupFilter, setGroupFilter] = useState("");
+  const [areaFilter, setAreaFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
+
   const bloodGroups = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"];
+
+  const fetchRequests = async () => {
+    try {
+      const res = await api.get("/emergency");
+      setRequests(res.data.requests || []);
+    } catch (error) {
+      console.log("Emergency requests fetch error:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchRequests();
+  }, []);
 
   const handleChange = async (e) => {
     const { name, value } = e.target;
@@ -30,7 +50,9 @@ function EmergencyRequest() {
 
     if (name === "bloodGroup" && value) {
       try {
-        const res = await api.get(`/emergency/match/${encodeURIComponent(value)}`);
+        const res = await api.get(
+          `/emergency/match/${encodeURIComponent(value)}`
+        );
         setMatchingDonors(res.data.donors || []);
       } catch (error) {
         console.log("Matching donor error:", error);
@@ -60,6 +82,7 @@ function EmergencyRequest() {
       });
 
       setMatchingDonors([]);
+      fetchRequests();
     } catch (error) {
       setMessage(
         error.response?.data?.message || "Failed to create emergency request"
@@ -67,12 +90,47 @@ function EmergencyRequest() {
     }
   };
 
+  const uniqueAreas = useMemo(() => {
+    return [...new Set(requests.map((item) => item.area).filter(Boolean))];
+  }, [requests]);
+
+  const filteredRequests = requests.filter((item) => {
+    const searchText = `
+      ${item.patientName || ""}
+      ${item.patientProblem || ""}
+      ${item.bloodGroup || ""}
+      ${item.hospital || ""}
+      ${item.area || ""}
+      ${item.phone || ""}
+      ${item.urgency || ""}
+      ${item.status || ""}
+      ${item.acceptedDonor?.name || ""}
+    `.toLowerCase();
+
+    const matchesSearch = searchText.includes(search.toLowerCase());
+    const matchesGroup = groupFilter === "" || item.bloodGroup === groupFilter;
+    const matchesArea = areaFilter === "" || item.area === areaFilter;
+    const matchesStatus = statusFilter === "" || item.status === statusFilter;
+
+    const matchesDate =
+      dateFilter === "" ||
+      new Date(item.createdAt).toISOString().slice(0, 10) === dateFilter;
+
+    return (
+      matchesSearch &&
+      matchesGroup &&
+      matchesArea &&
+      matchesStatus &&
+      matchesDate
+    );
+  });
+
   return (
     <div className="emergency-page">
       <div className="page-heading">
         <div>
           <h1>Emergency Blood Request</h1>
-          <p>Create urgent blood requests and notify matching donors.</p>
+          <p>Create urgent requests and manage all blood requests.</p>
         </div>
       </div>
 
@@ -117,7 +175,7 @@ function EmergencyRequest() {
                 <input
                   type="text"
                   name="patientProblem"
-                  placeholder="Example: Delivery, accident, surgery, anemia..."
+                  placeholder="Example: Delivery, accident, surgery..."
                   value={formData.patientProblem}
                   onChange={handleChange}
                   required
@@ -218,6 +276,128 @@ function EmergencyRequest() {
               ))}
             </div>
           )}
+        </div>
+      </div>
+
+      <div className="admin-request-card">
+        <div className="admin-request-heading">
+          <div>
+            <h2>All Blood Requests</h2>
+            <p>Admin can search, filter and track every request.</p>
+          </div>
+
+          <strong>{filteredRequests.length} Requests</strong>
+        </div>
+
+        <div className="admin-request-filters">
+          <input
+            placeholder="Search patient, hospital, area, phone, donor..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+
+          <select
+            value={groupFilter}
+            onChange={(e) => setGroupFilter(e.target.value)}
+          >
+            <option value="">All Groups</option>
+            {bloodGroups.map((group) => (
+              <option key={group} value={group}>
+                {group}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={areaFilter}
+            onChange={(e) => setAreaFilter(e.target.value)}
+          >
+            <option value="">All Areas</option>
+            {uniqueAreas.map((area) => (
+              <option key={area} value={area}>
+                {area}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="">All Status</option>
+            <option value="Pending">Pending</option>
+            <option value="Accepted">Accepted</option>
+            <option value="Completed">Completed</option>
+            <option value="Declined">Declined</option>
+          </select>
+
+          <input
+            type="date"
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+          />
+
+          <button
+            type="button"
+            className="clear-filter-btn"
+            onClick={() => {
+              setSearch("");
+              setGroupFilter("");
+              setAreaFilter("");
+              setStatusFilter("");
+              setDateFilter("");
+            }}
+          >
+            Clear
+          </button>
+        </div>
+
+        <div className="admin-request-table-wrap">
+          <table className="admin-request-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Patient</th>
+                <th>Problem</th>
+                <th>Blood</th>
+                <th>Hospital</th>
+                <th>Area</th>
+                <th>Phone</th>
+                <th>Urgency</th>
+                <th>Status</th>
+                <th>Accepted Donor</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {filteredRequests.length === 0 ? (
+                <tr>
+                  <td colSpan="10">No blood request found.</td>
+                </tr>
+              ) : (
+                filteredRequests.map((item) => (
+                  <tr key={item._id}>
+                    <td>{new Date(item.createdAt).toLocaleDateString()}</td>
+                    <td>{item.patientName}</td>
+                    <td>{item.patientProblem}</td>
+                    <td>
+                      <span className="blood-pill">{item.bloodGroup}</span>
+                    </td>
+                    <td>{item.hospital}</td>
+                    <td>{item.area}</td>
+                    <td>{item.phone}</td>
+                    <td>{item.urgency}</td>
+                    <td>
+                      <span className={`notification-status ${item.status}`}>
+                        {item.status}
+                      </span>
+                    </td>
+                    <td>{item.acceptedDonor?.name || "-"}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

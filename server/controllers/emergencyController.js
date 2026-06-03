@@ -19,7 +19,8 @@ export const createEmergencyRequest = async (req, res) => {
     if (!patientName || !patientProblem || !bloodGroup || !hospital || !area || !phone) {
       return res.status(400).json({
         success: false,
-        message: "Patient name, problem, blood group, hospital, area and phone are required",
+        message:
+          "Patient name, problem, blood group, hospital, area and phone are required",
       });
     }
 
@@ -56,7 +57,7 @@ export const createEmergencyRequest = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "Emergency request created and donors notified",
+      message: "Emergency request created and matched donors notified",
       request,
       matchedDonors: matchedDonors.length,
       notifications,
@@ -70,7 +71,7 @@ export const createEmergencyRequest = async (req, res) => {
   }
 };
 
-// GET ALL EMERGENCY REQUESTS
+// ADMIN: GET ALL EMERGENCY REQUESTS
 export const getEmergencyRequests = async (req, res) => {
   try {
     const requests = await EmergencyRequest.find()
@@ -128,7 +129,6 @@ export const updateEmergencyStatus = async (req, res) => {
     }
 
     request.status = req.body.status || request.status;
-
     await request.save();
 
     res.status(200).json({
