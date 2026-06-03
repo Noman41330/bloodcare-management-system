@@ -4,37 +4,13 @@ import DonationHistory from "../models/DonationHistory.js";
 import Donor from "../models/Donor.js";
 
 // GET DONOR NOTIFICATIONS
-// Rule:
-// - Pending request shows to matched donors.
-// - Accepted request shows only to accepted donor.
-// - Completed request stays in history but not as active request.
 export const getDonorNotifications = async (req, res) => {
   try {
     const donorId = req.params.donorId;
 
-    const allNotifications = await Notification.find({ donorId })
+    const notifications = await Notification.find({ donorId })
       .populate("requestId")
       .sort({ createdAt: -1 });
-
-    const notifications = allNotifications.filter((item) => {
-      const request = item.requestId;
-
-      if (!request) return false;
-
-      if (request.status === "Pending") {
-        return item.status === "Pending" || item.status === "Declined";
-      }
-
-      if (request.status === "Accepted") {
-        return String(request.acceptedDonor) === String(donorId);
-      }
-
-      if (request.status === "Completed") {
-        return String(request.acceptedDonor) === String(donorId);
-      }
-
-      return true;
-    });
 
     res.status(200).json({
       success: true,
@@ -78,12 +54,10 @@ export const acceptRequest = async (req, res) => {
       });
     }
 
-    // Set request accepted by this donor
     request.status = "Accepted";
     request.acceptedDonor = notification.donorId;
     await request.save();
 
-    // Accepted donor notification
     notification.status = "Accepted";
     notification.isRead = true;
     await notification.save();
@@ -124,7 +98,7 @@ export const declineRequest = async (req, res) => {
       });
     }
 
-    // If accepted donor declines, reopen request for all matched donors
+    // If accepted donor declines, request becomes pending again for all matched donors
     if (
       request.status === "Accepted" &&
       String(request.acceptedDonor) === String(notification.donorId)
@@ -139,7 +113,6 @@ export const declineRequest = async (req, res) => {
       );
     }
 
-    // Current donor declined
     notification.status = "Declined";
     notification.isRead = true;
     await notification.save();
@@ -159,7 +132,7 @@ export const declineRequest = async (req, res) => {
   }
 };
 
-// DONATION SUCCESSFUL
+// DONATION COMPLETED
 export const donationSuccessfulFromNotification = async (req, res) => {
   try {
     const { note } = req.body;
@@ -178,7 +151,7 @@ export const donationSuccessfulFromNotification = async (req, res) => {
     if (notification.status !== "Accepted") {
       return res.status(400).json({
         success: false,
-        message: "Only accepted request can be marked successful",
+        message: "Only accepted request can be completed",
       });
     }
 
@@ -189,24 +162,18 @@ export const donationSuccessfulFromNotification = async (req, res) => {
       requestId: request._id,
       donationDate: new Date(),
       hospitalName: request.hospital,
-      area: request.area,
+      area: request.area || request.hospital,
       note: note || request.note || request.patientProblem || "",
       source: "Blood Request",
     });
-
-    request.status = "Completed";
-    request.acceptedDonor = notification.donorId;
-    await request.save();
 
     notification.status = "Completed";
     notification.isRead = true;
     await notification.save();
 
-    // Hide/remove other donors' notifications for this completed request
-    await Notification.deleteMany({
-      requestId: request._id,
-      donorId: { $ne: notification.donorId },
-    });
+    request.status = "Completed";
+    request.acceptedDonor = notification.donorId;
+    await request.save();
 
     await Donor.findByIdAndUpdate(notification.donorId, {
       availability: "Unavailable",
@@ -215,7 +182,7 @@ export const donationSuccessfulFromNotification = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "Donation successful and history updated",
+      message: "Donation completed and history updated",
       donation,
       notification,
       request,
@@ -223,7 +190,7 @@ export const donationSuccessfulFromNotification = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to mark donation successful",
+      message: "Failed to complete donation",
       error: error.message,
     });
   }

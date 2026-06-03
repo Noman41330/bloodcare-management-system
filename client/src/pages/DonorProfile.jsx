@@ -137,11 +137,11 @@ function DonorProfile() {
         note: "Donation completed by donor confirmation",
       });
 
-      setMessage(res.data.message || "Donation successful");
+      setMessage(res.data.message || "Donation completed");
       fetchDonorProfile();
     } catch (error) {
       setMessage(
-        error.response?.data?.message || "Failed to mark donation successful"
+        error.response?.data?.message || "Failed to mark donation completed"
       );
     }
   };
@@ -338,7 +338,9 @@ function DonorProfile() {
                 return (
                   <div className="request-history-card" key={item._id}>
                     <div>
-                      <strong>{request?.patientName || "Unknown Patient"}</strong>
+                      <strong>
+                        {request?.patientName || "Unknown Patient"}
+                      </strong>
                       <span>{request?.hospital || item.hospital}</span>
                       <small>{request?.area || item.area}</small>
                     </div>
@@ -355,7 +357,10 @@ function DonorProfile() {
       </div>
 
       {showRequestModal && (
-        <div className="modal-overlay" onClick={() => setShowRequestModal(false)}>
+        <div
+          className="modal-overlay"
+          onClick={() => setShowRequestModal(false)}
+        >
           <div className="request-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <div>
@@ -393,7 +398,8 @@ function DonorProfile() {
 
                         <div className="notification-details">
                           <span>
-                            <strong>Patient:</strong> {request?.patientName || "-"}
+                            <strong>Patient:</strong>{" "}
+                            {request?.patientName || "-"}
                           </span>
 
                           <span>
@@ -407,7 +413,8 @@ function DonorProfile() {
                           </span>
 
                           <span>
-                            <strong>Area:</strong> {request?.area || item.area}
+                            <strong>Area:</strong>{" "}
+                            {request?.area || item.area}
                           </span>
 
                           <span>
@@ -415,7 +422,8 @@ function DonorProfile() {
                           </span>
 
                           <span>
-                            <strong>Urgency:</strong> {request?.urgency || "-"}
+                            <strong>Urgency:</strong>{" "}
+                            {request?.urgency || "-"}
                           </span>
                         </div>
                       </div>
@@ -442,13 +450,23 @@ function DonorProfile() {
                         )}
 
                         {item.status === "Accepted" && (
-                          <button
-                            type="button"
-                            className="submit-btn success-action-btn"
-                            onClick={() => handleDonationSuccessful(item._id)}
-                          >
-                            Donation Successful
-                          </button>
+                          <>
+                            <button
+                              type="button"
+                              className="submit-btn success-action-btn"
+                              onClick={() => handleDonationSuccessful(item._id)}
+                            >
+                              Donation Completed
+                            </button>
+
+                            <button
+                              type="button"
+                              className="delete-btn"
+                              onClick={() => handleDeclineRequest(item._id)}
+                            >
+                              Decline
+                            </button>
+                          </>
                         )}
 
                         {item.status === "Completed" && (
