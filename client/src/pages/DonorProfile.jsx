@@ -52,9 +52,8 @@ function DonorProfile() {
   ).length;
 
   const getDonationCounter = () => {
-    if (!donor.lastDonationDate) {
+    if (!donor?.lastDonationDate) {
       return {
-        daysLeft: 0,
         text: "Ready to donate",
         available: true,
       };
@@ -63,12 +62,13 @@ function DonorProfile() {
     const lastDate = new Date(donor.lastDonationDate);
     const today = new Date();
 
-    const diffTime = today - lastDate;
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    const diffDays = Math.floor(
+      (today - lastDate) / (1000 * 60 * 60 * 24)
+    );
+
     const daysLeft = Math.max(90 - diffDays, 0);
 
     return {
-      daysLeft,
       text: daysLeft > 0 ? `${daysLeft} days left` : "Ready to donate",
       available: daysLeft === 0,
     };
@@ -174,32 +174,30 @@ function DonorProfile() {
 
   return (
     <div className="profile-page">
-      <div className="profile-action-row">
-        <div className="donation-counter-box">
-          <span>Donation Counter</span>
+      <div className="profile-card">
+        <div className="profile-card-top-actions">
+          <div className="donation-counter-box">
+            <span>Donation Counter</span>
+            <h3>{donationCounter.text}</h3>
+            <p>
+              {donationCounter.available
+                ? "Donor is eligible now"
+                : "Counter will reset after next donation"}
+            </p>
+          </div>
 
-          <h3>{donationCounter.text}</h3>
-
-          <p>
-            {donationCounter.available
-              ? "Donor is eligible now"
-              : "Counter will reset after next donation"}
-          </p>
+          <button
+            type="button"
+            className="blood-request-btn"
+            onClick={() => setShowRequestModal(true)}
+          >
+            Blood Requests
+            {pendingRequestCount > 0 && (
+              <span className="request-count">{pendingRequestCount}</span>
+            )}
+          </button>
         </div>
 
-        <button
-          type="button"
-          className="blood-request-btn"
-          onClick={() => setShowRequestModal(true)}
-        >
-          Blood Requests
-          {pendingRequestCount > 0 && (
-            <span className="request-count">{pendingRequestCount}</span>
-          )}
-        </button>
-      </div>
-
-      <div className="profile-card">
         <div className="profile-photo-wrap">
           <img
             src={`http://localhost:5000${donor.photo}`}
@@ -395,8 +393,7 @@ function DonorProfile() {
 
                         <div className="notification-details">
                           <span>
-                            <strong>Patient:</strong>{" "}
-                            {request?.patientName || "-"}
+                            <strong>Patient:</strong> {request?.patientName || "-"}
                           </span>
 
                           <span>
@@ -410,8 +407,7 @@ function DonorProfile() {
                           </span>
 
                           <span>
-                            <strong>Area:</strong>{" "}
-                            {request?.area || item.area}
+                            <strong>Area:</strong> {request?.area || item.area}
                           </span>
 
                           <span>
@@ -419,8 +415,7 @@ function DonorProfile() {
                           </span>
 
                           <span>
-                            <strong>Urgency:</strong>{" "}
-                            {request?.urgency || "-"}
+                            <strong>Urgency:</strong> {request?.urgency || "-"}
                           </span>
                         </div>
                       </div>
