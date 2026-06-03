@@ -10,6 +10,8 @@ import dotenv from "dotenv";
 import donorRoutes from "./routes/donorRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import emergencyRoutes from "./routes/emergencyRoutes.js";
+import donationRoutes from "./routes/donationRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 
 
 // dotenv.config()
@@ -63,6 +65,8 @@ app.use(
 
 app.use("/api/auth", authRoutes);
 app.use("/api/emergency", emergencyRoutes);
+app.use("/api/donations", donationRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 
 // MongoDB connection

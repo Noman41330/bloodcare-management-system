@@ -1,65 +1,74 @@
-// mongoose = MongoDB schema/model package
 import mongoose from "mongoose";
 
-// Schema = database structure blueprint
 const emergencyRequestSchema = new mongoose.Schema(
   {
-    // Patient name
     patientName: {
       type: String,
       required: true,
       trim: true,
     },
 
-    // Required blood group
+    patientProblem: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
     bloodGroup: {
       type: String,
       required: true,
+      enum: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"],
     },
 
-    // Hospital name/location
     hospital: {
       type: String,
       required: true,
       trim: true,
     },
 
-    // Contact number
+    area: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
     phone: {
       type: String,
       required: true,
       trim: true,
     },
 
-    // Urgency level
     urgency: {
       type: String,
       enum: ["Normal", "Urgent", "Critical"],
       default: "Urgent",
     },
 
-    // Extra details
     note: {
       type: String,
+      default: "",
       trim: true,
     },
 
-    // Request status
     status: {
       type: String,
-      enum: ["Pending", "Completed"],
+      enum: ["Pending", "Accepted", "Completed", "Declined"],
       default: "Pending",
     },
+
+    acceptedDonor: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Donor",
+      default: null,
+    },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-// Model = MongoDB collection creator
 const EmergencyRequest = mongoose.model(
   "EmergencyRequest",
-  emergencyRequestSchema
+  emergencyRequestSchema,
+  "bloodRequests"
 );
 
 export default EmergencyRequest;

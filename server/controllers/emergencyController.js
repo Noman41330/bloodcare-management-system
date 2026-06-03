@@ -1,33 +1,65 @@
 import EmergencyRequest from "../models/EmergencyRequest.js";
 import Donor from "../models/Donor.js";
+import Notification from "../models/Notification.js";
 
 // CREATE EMERGENCY REQUEST
 export const createEmergencyRequest = async (req, res) => {
   try {
-    // req.body = frontend form data
-    const { patientName, bloodGroup, hospital, phone, urgency, note } = req.body;
+    const {
+      patientName,
+      patientProblem,
+      bloodGroup,
+      hospital,
+      area,
+      phone,
+      urgency,
+      note,
+    } = req.body;
 
-    if (!patientName || !bloodGroup || !hospital || !phone) {
+    if (!patientName || !patientProblem || !bloodGroup || !hospital || !area || !phone) {
       return res.status(400).json({
         success: false,
-        message: "Required fields are missing",
+        message: "Patient name, problem, blood group, hospital, area and phone are required",
       });
     }
 
-    // Save emergency request
     const request = await EmergencyRequest.create({
       patientName,
+      patientProblem,
       bloodGroup,
       hospital,
+      area,
       phone,
       urgency,
       note,
     });
 
+    const matchedDonors = await Donor.find({
+      bloodGroup,
+      availability: "Available",
+    });
+
+    const notifications = await Promise.all(
+      matchedDonors.map((donor) =>
+        Notification.create({
+          donorId: donor._id,
+          requestId: request._id,
+          title: "Emergency Blood Request",
+          message: `${patientName} needs ${bloodGroup} blood at ${hospital}, ${area}. Problem: ${patientProblem}`,
+          bloodGroup,
+          hospital,
+          area,
+          status: "Pending",
+        })
+      )
+    );
+
     res.status(201).json({
       success: true,
-      message: "Emergency request created successfully",
+      message: "Emergency request created and donors notified",
       request,
+      matchedDonors: matchedDonors.length,
+      notifications,
     });
   } catch (error) {
     res.status(500).json({
@@ -41,7 +73,9 @@ export const createEmergencyRequest = async (req, res) => {
 // GET ALL EMERGENCY REQUESTS
 export const getEmergencyRequests = async (req, res) => {
   try {
-    const requests = await EmergencyRequest.find().sort({ createdAt: -1 });
+    const requests = await EmergencyRequest.find()
+      .populate("acceptedDonor")
+      .sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
@@ -57,13 +91,15 @@ export const getEmergencyRequests = async (req, res) => {
   }
 };
 
-// GET MATCHING DONORS BY BLOOD GROUP
+// GET MATCHING DONORS
 export const getMatchingDonors = async (req, res) => {
   try {
-    // req.params.bloodGroup = blood group from URL
     const { bloodGroup } = req.params;
 
-    const donors = await Donor.find({ bloodGroup }).sort({ createdAt: -1 });
+    const donors = await Donor.find({
+      bloodGroup,
+      availability: "Available",
+    }).sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
@@ -109,6 +145,7 @@ export const updateEmergencyStatus = async (req, res) => {
   }
 };
 
+// EMERGENCY STATS
 export const getEmergencyStats = async (req, res) => {
   try {
     const pendingRequests = await EmergencyRequest.countDocuments({

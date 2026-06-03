@@ -4,70 +4,67 @@ import api from "../api/api";
 function EmergencyRequest() {
   const [formData, setFormData] = useState({
     patientName: "",
+    patientProblem: "",
     bloodGroup: "",
     hospital: "",
+    area: "",
     phone: "",
     urgency: "Urgent",
     note: "",
   });
 
-  const [requests, setRequests] = useState([]);
   const [matchingDonors, setMatchingDonors] = useState([]);
   const [message, setMessage] = useState("");
 
-  // handleChange = update form data
-  const handleChange = (e) => {
-    setFormData({
+  const bloodGroups = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"];
+
+  const handleChange = async (e) => {
+    const { name, value } = e.target;
+
+    const updatedData = {
       ...formData,
-      [e.target.name]: e.target.value,
-    });
+      [name]: value,
+    };
+
+    setFormData(updatedData);
+
+    if (name === "bloodGroup" && value) {
+      try {
+        const res = await api.get(`/emergency/match/${encodeURIComponent(value)}`);
+        setMatchingDonors(res.data.donors || []);
+      } catch (error) {
+        console.log("Matching donor error:", error);
+        setMatchingDonors([]);
+      }
+    }
   };
 
-  // fetch emergency requests
-  const fetchRequests = async () => {
-    const res = await api.get("/emergency");
-    setRequests(res.data.requests);
-  };
-
-  useEffect(() => {
-    fetchRequests();
-  }, []);
-
-  // submit emergency request
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setMessage("");
 
     try {
       const res = await api.post("/emergency", formData);
 
-      setMessage(res.data.message);
-
-      // Find matching donors immediately
-      const matchRes = await api.get(`/emergency/match/${formData.bloodGroup}`);
-      setMatchingDonors(matchRes.data.donors);
+      setMessage(res.data.message || "Emergency request created successfully");
 
       setFormData({
         patientName: "",
+        patientProblem: "",
         bloodGroup: "",
         hospital: "",
+        area: "",
         phone: "",
         urgency: "Urgent",
         note: "",
       });
 
-      fetchRequests();
+      setMatchingDonors([]);
     } catch (error) {
-      setMessage(error.response?.data?.message || "Request failed");
+      setMessage(
+        error.response?.data?.message || "Failed to create emergency request"
+      );
     }
-  };
-
-  // update status
-  const markCompleted = async (id) => {
-    await api.patch(`/emergency/${id}/status`, {
-      status: "Completed",
-    });
-
-    fetchRequests();
   };
 
   return (
@@ -75,16 +72,14 @@ function EmergencyRequest() {
       <div className="page-heading">
         <div>
           <h1>Emergency Blood Request</h1>
-          <p>Create urgent blood requests and find matching donors.</p>
+          <p>Create urgent blood requests and notify matching donors.</p>
         </div>
       </div>
 
-      <section className="emergency-grid">
-        <div className="form-card professional">
-          <div className="form-card-header">
-            <h2>Create Request</h2>
-            <p>Fill patient and hospital information.</p>
-          </div>
+      <div className="emergency-grid">
+        <div className="form-card">
+          <h2>Create Request</h2>
+          <p>Fill patient and hospital information.</p>
 
           <form onSubmit={handleSubmit}>
             <div className="form-grid">
@@ -93,9 +88,9 @@ function EmergencyRequest() {
                 <input
                   type="text"
                   name="patientName"
+                  placeholder="Example: Rahim Uddin"
                   value={formData.patientName}
                   onChange={handleChange}
-                  placeholder="Example: Rahim Uddin"
                   required
                 />
               </div>
@@ -109,15 +104,24 @@ function EmergencyRequest() {
                   required
                 >
                   <option value="">Select blood group</option>
-                  <option value="A+">A+</option>
-                  <option value="A-">A-</option>
-                  <option value="B+">B+</option>
-                  <option value="B-">B-</option>
-                  <option value="O+">O+</option>
-                  <option value="O-">O-</option>
-                  <option value="AB+">AB+</option>
-                  <option value="AB-">AB-</option>
+                  {bloodGroups.map((group) => (
+                    <option key={group} value={group}>
+                      {group}
+                    </option>
+                  ))}
                 </select>
+              </div>
+
+              <div className="field full">
+                <label>Patient Problem</label>
+                <input
+                  type="text"
+                  name="patientProblem"
+                  placeholder="Example: Delivery, accident, surgery, anemia..."
+                  value={formData.patientProblem}
+                  onChange={handleChange}
+                  required
+                />
               </div>
 
               <div className="field">
@@ -125,9 +129,21 @@ function EmergencyRequest() {
                 <input
                   type="text"
                   name="hospital"
+                  placeholder="Example: Dhaka Medical"
                   value={formData.hospital}
                   onChange={handleChange}
-                  placeholder="Example: Dhaka Medical"
+                  required
+                />
+              </div>
+
+              <div className="field">
+                <label>Area</label>
+                <input
+                  type="text"
+                  name="area"
+                  placeholder="Example: Mirpur, Dhaka"
+                  value={formData.area}
+                  onChange={handleChange}
                   required
                 />
               </div>
@@ -137,9 +153,9 @@ function EmergencyRequest() {
                 <input
                   type="text"
                   name="phone"
+                  placeholder="017XXXXXXXX"
                   value={formData.phone}
                   onChange={handleChange}
-                  placeholder="017XXXXXXXX"
                   required
                 />
               </div>
@@ -161,9 +177,9 @@ function EmergencyRequest() {
                 <label>Note</label>
                 <textarea
                   name="note"
+                  placeholder="Extra details..."
                   value={formData.note}
                   onChange={handleChange}
-                  placeholder="Extra details..."
                 />
               </div>
             </div>
@@ -176,18 +192,16 @@ function EmergencyRequest() {
           {message && <div className="message-box">{message}</div>}
         </div>
 
-        <div className="section-card">
-          <div className="section-title">
-            <h2>Matching Donors</h2>
-            <p>Donors matched by requested blood group.</p>
-          </div>
+        <div className="form-card">
+          <h2>Matching Donors</h2>
+          <p>Donors matched by requested blood group.</p>
 
           {matchingDonors.length === 0 ? (
-            <p className="table-message">No matching donor selected yet</p>
+            <p>No matching donor selected/found.</p>
           ) : (
-            <div className="recent-donor-list">
+            <div className="matching-donor-list">
               {matchingDonors.map((donor) => (
-                <div className="recent-donor-card" key={donor._id}>
+                <div className="matching-donor-card" key={donor._id}>
                   <img
                     src={`http://localhost:5000${donor.photo}`}
                     alt={donor.name}
@@ -199,53 +213,13 @@ function EmergencyRequest() {
                   </div>
 
                   <span className="blood-pill">{donor.bloodGroup}</span>
-                  <small>{donor.district}</small>
+                  <strong>{donor.district}</strong>
                 </div>
               ))}
             </div>
           )}
         </div>
-      </section>
-
-      <section className="section-card">
-        <div className="section-title">
-          <h2>Emergency Requests</h2>
-          <p>All emergency blood requests.</p>
-        </div>
-
-        {requests.length === 0 ? (
-          <p className="table-message">No emergency request found</p>
-        ) : (
-          <div className="request-list">
-            {requests.map((item) => (
-              <div className="request-card" key={item._id}>
-                <div>
-                  <h3>{item.patientName}</h3>
-                  <p>{item.hospital}</p>
-                  <small>{item.phone}</small>
-                </div>
-
-                <span className="blood-pill">{item.bloodGroup}</span>
-
-                <span className={`urgency ${item.urgency.toLowerCase()}`}>
-                  {item.urgency}
-                </span>
-
-                <span className="status-pill">{item.status}</span>
-
-                {item.status === "Pending" && (
-                  <button
-                    className="complete-btn"
-                    onClick={() => markCompleted(item._id)}
-                  >
-                    Mark Completed
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+      </div>
     </div>
   );
 }
