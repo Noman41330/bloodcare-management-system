@@ -1,8 +1,9 @@
 import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import api from "../api/api";
 
 function Register() {
-  const [role, setRole] = useState("member");
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -10,13 +11,7 @@ function Register() {
     password: "",
     phone: "",
     district: "",
-    bloodGroup: "",
-    address: "",
-    age: "",
-    weight: "",
-    lastDonationMonths: "",
-    hasMajorIllness: "no",
-    photo: null,
+    profilePhoto: null,
   });
 
   const [message, setMessage] = useState("");
@@ -31,17 +26,18 @@ function Register() {
   const handlePhotoChange = (e) => {
     setFormData({
       ...formData,
-      photo: e.target.files[0],
+      profilePhoto: e.target.files[0],
     });
   };
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    setMessage("");
 
     try {
       const data = new FormData();
 
-      data.append("role", role);
+      data.append("role", "member");
 
       Object.keys(formData).forEach((key) => {
         if (formData[key]) {
@@ -51,7 +47,11 @@ function Register() {
 
       const res = await api.post("/auth/register", data);
 
-      setMessage(res.data.message);
+      setMessage(res.data.message || "Member registered successfully");
+
+      setTimeout(() => {
+        navigate("/login");
+      }, 800);
     } catch (error) {
       setMessage(error.response?.data?.message || "Registration failed");
     }
@@ -59,114 +59,95 @@ function Register() {
 
   return (
     <div className="auth-page">
-      <div className="auth-card wide-auth">
-        <span className="auth-badge">Create Account</span>
-
-        <h1>Register Account</h1>
-        <p>Register as a member or directly as an eligible donor.</p>
-
-        <div className="role-switch">
-          <button
-            type="button"
-            className={role === "member" ? "active" : ""}
-            onClick={() => setRole("member")}
-          >
-            Member
-          </button>
-
-          <button
-            type="button"
-            className={role === "donor" ? "active" : ""}
-            onClick={() => setRole("donor")}
-          >
-            Donor
-          </button>
+      <div className="auth-card modern-register-card">
+        <div className="auth-card-header">
+          <span className="auth-badge">Member Registration</span>
+          <h1>Join BloodCare</h1>
+          <p>
+            Create a member account to request blood, track requests, and become
+            a donor anytime.
+          </p>
         </div>
 
         <form onSubmit={handleRegister}>
           <div className="form-grid">
             <div className="field">
-              <label>Name</label>
-              <input name="name" value={formData.name} onChange={handleChange} required />
+              <label>Full Name</label>
+              <input
+                name="name"
+                placeholder="Example: Rahim Uddin"
+                value={formData.name}
+                onChange={handleChange}
+                required
+              />
             </div>
 
             <div className="field">
               <label>Email</label>
-              <input type="email" name="email" value={formData.email} onChange={handleChange} required />
+              <input
+                type="email"
+                name="email"
+                placeholder="example@gmail.com"
+                value={formData.email}
+                onChange={handleChange}
+                required
+              />
             </div>
 
             <div className="field">
               <label>Password</label>
-              <input type="password" name="password" value={formData.password} onChange={handleChange} required />
+              <input
+                type="password"
+                name="password"
+                placeholder="Minimum 6 characters"
+                value={formData.password}
+                onChange={handleChange}
+                required
+              />
             </div>
 
             <div className="field">
               <label>Phone</label>
-              <input name="phone" value={formData.phone} onChange={handleChange} required />
+              <input
+                name="phone"
+                placeholder="017XXXXXXXX"
+                value={formData.phone}
+                onChange={handleChange}
+                required
+              />
             </div>
 
             <div className="field">
               <label>District</label>
-              <input name="district" value={formData.district} onChange={handleChange} required />
+              <input
+                name="district"
+                placeholder="Example: Dhaka"
+                value={formData.district}
+                onChange={handleChange}
+                required
+              />
             </div>
 
-            {role === "donor" && (
-              <>
-                <div className="field">
-                  <label>Blood Group</label>
-                  <select name="bloodGroup" value={formData.bloodGroup} onChange={handleChange} required>
-                    <option value="">Select</option>
-                    <option value="A+">A+</option>
-                    <option value="A-">A-</option>
-                    <option value="B+">B+</option>
-                    <option value="B-">B-</option>
-                    <option value="O+">O+</option>
-                    <option value="O-">O-</option>
-                    <option value="AB+">AB+</option>
-                    <option value="AB-">AB-</option>
-                  </select>
-                </div>
-
-                <div className="field">
-                  <label>Age</label>
-                  <input name="age" type="number" value={formData.age} onChange={handleChange} required />
-                </div>
-
-                <div className="field">
-                  <label>Weight KG</label>
-                  <input name="weight" type="number" value={formData.weight} onChange={handleChange} required />
-                </div>
-
-                <div className="field">
-                  <label>Last Donation Months Ago</label>
-                  <input name="lastDonationMonths" type="number" value={formData.lastDonationMonths} onChange={handleChange} required />
-                </div>
-
-                <div className="field">
-                  <label>Major Illness?</label>
-                  <select name="hasMajorIllness" value={formData.hasMajorIllness} onChange={handleChange}>
-                    <option value="no">No</option>
-                    <option value="yes">Yes</option>
-                  </select>
-                </div>
-
-                <div className="field full">
-                  <label>Address</label>
-                  <textarea name="address" value={formData.address} onChange={handleChange} required />
-                </div>
-
-                <div className="field full">
-                  <label>Photo</label>
-                  <input type="file" accept="image/*" onChange={handlePhotoChange} required />
-                </div>
-              </>
-            )}
+            <div className="field">
+              <label>Profile Photo</label>
+              <input
+                type="file"
+                name="profilePhoto"
+                accept="image/*"
+                onChange={handlePhotoChange}
+              />
+            </div>
           </div>
 
-          <button type="submit">
-            {role === "donor" ? "Register as Donor" : "Register as Member"}
+          <button className="submit-btn auth-submit-btn" type="submit">
+            Join as Member
           </button>
         </form>
+
+        <div className="auth-footer-text">
+          Want to donate blood directly?{" "}
+          <Link to="/donor-register">Register as Donor</Link>
+        </div>
 
         {message && <div className="message-box">{message}</div>}
       </div>

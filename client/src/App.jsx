@@ -1,101 +1,83 @@
-import {
-  BrowserRouter,
-  Routes,
-  Route,
-  NavLink,
-  Link,
-} from "react-router-dom";
-
 import { useState } from "react";
+import { BrowserRouter, Routes, Route, NavLink } from "react-router-dom";
 
 import Home from "./pages/Home";
 import DonorRegister from "./pages/DonorRegister";
 import DonorList from "./pages/DonorList";
+import DonorProfile from "./pages/DonorProfile";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
-import ProtectedRoute from "./routes/ProtectedRoute";
 import EmergencyRequest from "./pages/EmergencyRequest";
-import BecomeDonor from "./pages/BecomeDonor";
-import DonorProfile from "./pages/DonorProfile";
+import Profile from "./pages/Profile";
+import ProtectedRoute from "./routes/ProtectedRoute";
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  const closeSidebar = () => {
+    setSidebarOpen(false);
+  };
+
   return (
     <BrowserRouter>
-      <div className="site-shell">
-        {/* TOP NAVBAR */}
-        <header className="site-navbar">
-          {/* LEFT */}
-          <div className="nav-left">
+      <div className="app-shell">
+        <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
+          <div className="brand-box">
+            <div className="brand-icon">🩸</div>
+            <div>
+              <h2>BloodCare</h2>
+              <p>Donor Management</p>
+            </div>
+          </div>
+
+          <nav>
+            <NavLink to="/" onClick={closeSidebar}>Home</NavLink>
+            <NavLink to="/dashboard" onClick={closeSidebar}>Dashboard</NavLink>
+            <NavLink to="/register" onClick={closeSidebar}>Join Member</NavLink>
+            <NavLink to="/donor-register" onClick={closeSidebar}>Register Donor</NavLink>
+            <NavLink to="/donors" onClick={closeSidebar}>Donor List</NavLink>
+            <NavLink to="/emergency" onClick={closeSidebar}>Emergency</NavLink>
+            <NavLink to="/profile" onClick={closeSidebar}>Profile</NavLink>
+            <NavLink to="/login" onClick={closeSidebar}>Login</NavLink>
+          </nav>
+        </aside>
+
+        {sidebarOpen && (
+          <div className="sidebar-overlay" onClick={closeSidebar}></div>
+        )}
+
+        <main className="main-content">
+          <header className="topbar">
             <button
+              type="button"
               className="hamburger-btn"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
+              onClick={() => setSidebarOpen(true)}
             >
               ☰
             </button>
-          </div>
 
-          {/* CENTER */}
-          <Link to="/" className="site-logo center-logo">
-            <span className="site-logo-icon">🩸</span>
-            <span>BloodCare</span>
-          </Link>
-
-          {/* RIGHT */}
-          <div className="top-actions">
-            <NavLink to="/login" className="login-link">
-              Login
+            <NavLink to="/" className="top-logo">
+              <span>🩸</span>
+              <strong>BloodCare</strong>
             </NavLink>
 
-            <NavLink to="/emergency" className="demo-btn">
-              Emergency Request
-            </NavLink>
-          </div>
-        </header>
+            <div className="topbar-actions">
+              <NavLink to="/login">Login</NavLink>
+              <NavLink to="/emergency" className="emergency-top-btn">
+                Emergency Request
+              </NavLink>
+            </div>
+          </header>
 
-        {/* SIDEBAR */}
-        <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
-          <div className="sidebar-menu">
-            <NavLink to="/" end>
-              Home
-            </NavLink>
-
-            <NavLink to="/dashboard">
-              Dashboard
-            </NavLink>
-
-            <NavLink to="/donor-register">
-              Register Donor
-            </NavLink>
-
-            <NavLink to="/donors">
-              Donor List
-            </NavLink>
-
-            <NavLink to="/emergency">
-              Emergency
-            </NavLink>
-            <NavLink to="/become-donor">Become Donor</NavLink>
-          </div>
-        </aside>
-
-        {/* OVERLAY */}
-        {sidebarOpen && (
-          <div
-            className="sidebar-overlay"
-            onClick={() => setSidebarOpen(false)}
-          ></div>
-        )}
-
-        {/* MAIN */}
-        <main className="site-main">
           <Routes>
             <Route path="/" element={<Home />} />
-
-            <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/donor-register" element={<DonorRegister />} />
+            <Route path="/donors" element={<DonorList />} />
+            <Route path="/donors/:id" element={<DonorProfile />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/emergency" element={<EmergencyRequest />} />
 
             <Route
               path="/dashboard"
@@ -107,46 +89,14 @@ function App() {
             />
 
             <Route
-              path="/donor-register"
+              path="/profile"
               element={
                 <ProtectedRoute>
-                  <DonorRegister />
+                  <Profile />
                 </ProtectedRoute>
               }
             />
-
-            <Route
-              path="/donors"
-              element={
-                <ProtectedRoute>
-                  <DonorList />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/emergency"
-              element={
-                <ProtectedRoute>
-                  <EmergencyRequest />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-          path="/become-donor"
-          element={
-            <ProtectedRoute>
-              <BecomeDonor />
-            </ProtectedRoute>
-          }
-        />
-
-
-        <Route path="/donors/:id" element={<DonorProfile />} />
-        
           </Routes>
-          
         </main>
       </div>
     </BrowserRouter>

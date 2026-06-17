@@ -1,9 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import api from "../api/api";
 
 function DonorRegister() {
+  const [isLoggedInMember, setIsLoggedInMember] = useState(false);
+
   const [formData, setFormData] = useState({
     name: "",
+    email: "",
+    password: "",
     phone: "",
     bloodGroup: "",
     district: "",
@@ -18,6 +22,33 @@ function DonorRegister() {
   });
 
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    const loadLoggedInUser = async () => {
+      const token = localStorage.getItem("adminToken");
+
+      if (!token) return;
+
+      try {
+        const res = await api.get("/auth/profile");
+        const user = res.data.user;
+
+        setIsLoggedInMember(user.role === "member");
+
+        setFormData((prev) => ({
+          ...prev,
+          name: user.name || "",
+          email: user.email || "",
+          phone: user.phone || "",
+          district: user.district || "",
+        }));
+      } catch (error) {
+        console.log("Profile prefill failed:", error);
+      }
+    };
+
+    loadLoggedInUser();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -37,6 +68,7 @@ function DonorRegister() {
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    setMessage("");
 
     if (!formData.isAgreed) {
       setMessage("Donor must agree before registration");
@@ -47,41 +79,47 @@ function DonorRegister() {
       const data = new FormData();
 
       Object.keys(formData).forEach((key) => {
-        data.append(key, formData[key]);
+        if (key === "email" || key === "password") {
+          if (!isLoggedInMember && formData[key]) {
+            data.append(key, formData[key]);
+          }
+        } else if (formData[key] !== null && formData[key] !== "") {
+          data.append(key, formData[key]);
+        }
       });
 
-      const res = await api.post("/donors/register", data);
+      let res;
+
+      if (isLoggedInMember) {
+        res = await api.post("/auth/become-donor", data);
+
+        localStorage.setItem("userInfo", JSON.stringify(res.data.user));
+        localStorage.setItem("adminInfo", JSON.stringify(res.data.user));
+      } else {
+        data.append("role", "donor");
+        res = await api.post("/auth/register", data);
+      }
 
       setMessage(res.data.message || "Donor registered successfully");
-
-      setFormData({
-        name: "",
-        phone: "",
-        bloodGroup: "",
-        district: "",
-        address: "",
-        religion: "",
-        gender: "",
-        isNewDonor: "Yes",
-        lastDonationDate: "",
-        isAgreed: false,
-        photo: null,
-        nidPhoto: null,
-      });
     } catch (error) {
-      setMessage(error.response?.data?.message || "Registration failed");
+      setMessage(error.response?.data?.message || "Donor registration failed");
     }
   };
 
   return (
-    <div className="register-page">
-      <div className="single-form-card">
-        <div className="form-card-header">
-          <span className="auth-badge">New Donor</span>
+    <div className="donor-register-page">
+      <div className="donor-register-card">
+        <div className="auth-card-header">
+          <span className="auth-badge">
+            {isLoggedInMember ? "Become Donor" : "New Donor"}
+          </span>
+
           <h1>Register Blood Donor</h1>
+
           <p>
-            Fill donor details carefully. Donor ID will be generated
-            automatically from DNR10001.
+            {isLoggedInMember
+              ? "Your member information is pre-filled. You can edit before submitting."
+              : "Create a donor account. You will automatically become a member too."}
           </p>
         </div>
 
@@ -97,6 +135,34 @@ function DonorRegister() {
                 required
               />
             </div>
+
+            {!isLoggedInMember && (
+              <>
+                <div className="field">
+                  <label>Email</label>
+                  <input
+                    type="email"
+                    name="email"
+                    placeholder="example@gmail.com"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+
+                <div className="field">
+                  <label>Password</label>
+                  <input
+                    type="password"
+                    name="password"
+                    placeholder="Minimum 6 characters"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+              </>
+            )}
 
             <div className="field">
               <label>Phone Number</label>
@@ -118,14 +184,13 @@ function DonorRegister() {
                 required
               >
                 <option value="">Select blood group</option>
-                <option>A+</option>
-                <option>A-</option>
-                <option>B+</option>
-                <option>B-</option>
-                <option>O+</option>
-                <option>O-</option>
-                <option>AB+</option>
-                <option>AB-</option>
+                {["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"].map(
+                  (group) => (
+                    <option key={group} value={group}>
+                      {group}
+                    </option>
+                  )
+                )}
               </select>
             </div>
 
@@ -153,7 +218,7 @@ function DonorRegister() {
 
             <div className="field full">
               <label>Religion</label>
-              <div className="radio-group">
+              <div className="radio-group modern-radio-group">
                 {["Islam", "Hindu", "Christian", "Buddhist", "Others"].map(
                   (item) => (
                     <label key={item}>
@@ -174,7 +239,7 @@ function DonorRegister() {
 
             <div className="field full">
               <label>Gender</label>
-              <div className="radio-group">
+              <div className="radio-group modern-radio-group">
                 {["Male", "Female", "Other"].map((item) => (
                   <label key={item}>
                     <input
@@ -193,7 +258,7 @@ function DonorRegister() {
 
             <div className="field full">
               <label>New Donor?</label>
-              <div className="radio-group">
+              <div className="radio-group modern-radio-group">
                 {["Yes", "No"].map((item) => (
                   <label key={item}>
                     <input
@@ -257,8 +322,8 @@ function DonorRegister() {
             </div>
           </div>
 
-          <button className="submit-btn" type="submit">
-            Register Donor
+          <button className="submit-btn auth-submit-btn" type="submit">
+            {isLoggedInMember ? "Become Donor" : "Register as Donor"}
           </button>
         </form>
 
